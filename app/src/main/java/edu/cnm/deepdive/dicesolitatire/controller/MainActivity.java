@@ -1,4 +1,4 @@
-package edu.cnm.deepdive.dicesolitatire;
+package edu.cnm.deepdive.dicesolitatire.controller;
 
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -10,6 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import edu.cnm.deepdive.dicesolitatire.R;
 import edu.cnm.deepdive.dicesolitatire.model.Roll;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -81,13 +82,14 @@ public class MainActivity extends AppCompatActivity {
       diceFaces[i] = getDrawable(id);
 
     }
-    roller.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Roll roll = new Roll(rng);
-        //TODO Display dice images.
-      }
+    roller.setOnClickListener((v) -> {
+      roller.setEnabled(false);
+      new DiceAnimator().start();
     });
+  }
+
+  private void displayDiceFace(int die, int face) {
+    diceImages[die].setImageDrawable(diceFaces[face]);
   }
 
   private void setupPairControls(Resources res, NumberFormat formatter) {
@@ -105,5 +107,31 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
+  private class DiceAnimator extends Thread {
+
+    @Override
+    public void run() {
+      Roll roll = new Roll(rng);
+      for (int i = 0; i < Roll.NUM_DICE; i++) {
+        final int dieIndex = i;
+        for (int j = 0; j < 5; j++) {
+          int animationFace = rng.nextInt(Roll.NUM_FACES);
+          displayFace(dieIndex, animationFace + 1);
+          try {
+            sleep(120);
+          } catch (InterruptedException expected) {
+            //Ignore exception and get on with life.
+          }
+        }
+        final int value = roll.getDice()[i];
+        displayFace(dieIndex, value);
+      }
+      runOnUiThread(() -> roller.setEnabled(true));
+    }
+
+    private void displayFace(final int dieIndex, final int value) {
+      runOnUiThread(() -> displayDiceFace(dieIndex, value - 1));
+    }
+  }
 
 }
